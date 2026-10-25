@@ -27,11 +27,15 @@ npm run dev
 
 ### Письма для открытой регистрации
 
-Supabase по умолчанию отправляет письма только адресам участников организации. Для регистрации любого желающего нужен внешний SMTP-провайдер. Один из вариантов — Brevo: создать аккаунт, включить транзакционную почту, указать отправителя и сгенерировать SMTP-ключ. Затем в панели Supabase открыть **Authentication → SMTP Settings**, включить Custom SMTP и указать host, port, login, key и sender. SMTP-ключ вводится **только в панели Supabase**, не в коде и не в GitHub.
+Supabase по умолчанию отправляет письма только адресам участников организации. Для регистрации любого желающего нужен внешний SMTP-провайдер. Бесплатный тариф Brevo позволяет отправлять до 300 писем в день, включая транзакционные.
 
-Если нет своего домена, Brevo может заменить адрес отправителя своим техническим адресом. Для надёжной доставки писем в будущем лучше добавить собственный домен и настроить DKIM/DMARC. Перед публичным запуском отправь тестовое письмо и проверь регистрацию, подтверждение адреса и вход.
+1. Создай аккаунт Brevo и подтверди свою почту. В **Settings → Senders, Domains, IPs → Senders** добавь отправителя с именем `English Together` и своим адресом почты, затем подтверди этот адрес кодом из письма.
+2. В **Settings → SMTP & API → SMTP** создай отдельный SMTP-ключ для `English Together` и сохрани его в менеджере паролей. Скопируй значение **SMTP login** из той же страницы: оно может отличаться от почты входа в Brevo.
+3. В панели Supabase открой **Authentication → Emails → SMTP Settings**, включи **Enable custom SMTP** и заполни: **Sender email address** — подтверждённый адрес отправителя; **Sender name** — `English Together`; **Host** — `smtp-relay.brevo.com`; **Port number** — `587`; **Username** — SMTP login из Brevo; **Password** — созданный SMTP-ключ. Сохрани изменения.
 
-Официальные инструкции: [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [Brevo SMTP-ключ](https://help.brevo.com/hc/en-us/articles/7959631848850-Create-and-manage-your-SMTP-keys).
+SMTP-ключ вводится **только в панели Supabase**, не в коде, GitHub или чате. Если нет своего домена, Brevo может заменить адрес отправителя своим техническим адресом. Для надёжной доставки писем в будущем лучше добавить собственный домен и настроить DKIM/DMARC. Перед публичным запуском отправь тестовое письмо и проверь регистрацию, подтверждение адреса, вход и восстановление пароля.
+
+Официальные инструкции: [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [Brevo SMTP](https://help.brevo.com/hc/en-us/articles/7924908994450-Send-transactional-emails-using-Brevo-SMTP), [Brevo SMTP-ключ](https://help.brevo.com/hc/en-us/articles/7959631848850-Create-and-manage-your-SMTP-keys).
 
 ## GitHub Pages
 
