@@ -5,7 +5,7 @@ import { scoreAnswers, progressPercent, nextReview, dueReviews, nextStudyDate, l
 
 const app = document.querySelector('#app');
 const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-const state = { user: null, profile: null, progress: [], reviews: [], games: [], events: [], authMode: 'signup', recovery: false, notice: '', result: null, lessonStartedAt: 0, loading: true };
+const state = { user: null, profile: null, progress: [], reviews: [], games: [], events: [], authMode: 'signup', notice: '', result: null, lessonStartedAt: 0, loading: true };
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const completedIds = () => new Set(state.progress.filter(row => row.completed_at).map(row => row.lesson_id));
@@ -44,7 +44,7 @@ async function syncAuth(user) {
   render();
   try {
     if (state.user) await loadData();
-    else { state.profile = null; state.progress = []; state.reviews = []; state.games = []; state.events = []; state.recovery = false; }
+    else { state.profile = null; state.progress = []; state.reviews = []; state.games = []; state.events = []; }
   } catch (error) { state.notice = `Не удалось загрузить данные: ${error.message}`; }
   state.loading = false;
   render();
@@ -70,28 +70,23 @@ function renderLanding() {
     </div><div class="hero-art" aria-hidden="true"><div class="art-sun"></div><div class="art-card art-card-one"><span>01 / Pre-A1</span><strong>Hello, world!</strong><small>Первый шаг уже здесь</small></div><div class="art-card art-card-two"><span>Твой прогресс</span><strong>Каждый день<br>чуть увереннее</strong><div class="art-progress"><i></i></div></div><div class="art-orbit">Aa</div></div></div></section>
     <section class="container feature-section"><div class="section-head"><span class="eyebrow">Как устроено обучение</span><h2>Учиться, пробовать, возвращаться</h2></div><div class="feature-grid"><article class="feature-card"><span class="feature-icon">01</span><h3>Понятная теория</h3><p>Короткие объяснения по-русски, примеры на английском и новые слова в контексте.</p></article><article class="feature-card"><span class="feature-icon">02</span><h3>Практика каждый день</h3><p>Чтение, прослушивание диалогов, письмо, устные задания и проверка ответов.</p></article><article class="feature-card"><span class="feature-icon">03</span><h3>Память надолго</h3><p>Повторение возвращает урок через 1, 3, 7 и больше дней — по твоим результатам.</p></article></div></section>
     <section class="container levels-preview"><div class="section-head"><span class="eyebrow">От простого к сложному</span><h2>Маршрут от нуля до C2</h2></div><div class="level-strip">${levels.map((level, i) => `<div class="level-step" style="--level-color:${level.color}"><span>${String(i + 1).padStart(2, '0')}</span><strong>${esc(level.badge)}</strong><small>${esc(level.name)}</small></div>`).join('')}</div></section>
-    <section class="container auth-section" id="auth"><div class="auth-copy"><span class="eyebrow">Твой следующий шаг</span><h2>Создай личное пространство</h2><p>После входа ты выберешь дни и минуты занятий. У каждого ученика свой прогресс, даже если вы учитесь вместе.</p><p class="muted">Письмо для подтверждения адреса может прийти не сразу. Проверь «Спам».</p></div>${renderAuthForm()}</section>
+    <section class="container auth-section" id="auth"><div class="auth-copy"><span class="eyebrow">Твой следующий шаг</span><h2>Создай личное пространство</h2><p>После входа ты выберешь дни и минуты занятий. У каждого ученика свой прогресс, даже если вы учитесь вместе.</p><p class="muted">Письма не нужны: после регистрации ты сразу попадёшь в курс.</p></div>${renderAuthForm()}</section>
   </main>`;
 }
 
 function renderAuthForm() {
-  if (state.authMode === 'reset') return `<div class="auth-card"><button type="button" class="text-button" data-action="auth-login">← Вернуться ко входу</button><h3>Восстановление пароля</h3><p>Укажи email аккаунта. Мы отправим ссылку, по которой можно задать новый пароль.</p><form data-form="reset-request"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button class="button button-primary full" type="submit">Отправить ссылку</button></form></div>`;
   const signup = state.authMode === 'signup';
   return `<div class="auth-card"><div class="segmented"><button type="button" class="${signup ? 'active' : ''}" data-action="auth-signup">Регистрация</button><button type="button" class="${!signup ? 'active' : ''}" data-action="auth-login">Вход</button></div>
     <h3>${signup ? 'Начнём учиться?' : 'Рад тебя видеть снова'}</h3><p>${signup ? 'Создай аккаунт, чтобы сохранить свой путь.' : 'Войди и продолжи с того места, где остановился.'}</p>
     <form data-form="auth"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>Пароль<input name="password" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}" minlength="8" required placeholder="Не менее 8 символов"></label><button class="button button-primary full" type="submit">${signup ? 'Создать аккаунт' : 'Войти'}</button></form>
-    <p class="form-note">${signup ? 'Регистрируясь, ты получишь письмо для подтверждения email.' : '<button type="button" class="text-button" data-action="auth-reset">Забыл пароль?</button>'}</p></div>`;
-}
-
-function renderNewPassword() {
-  return `<main class="container onboarding"><div class="onboarding-intro"><span class="eyebrow">Безопасность аккаунта</span><h1>Задай новый пароль</h1><p>Ссылка из письма подтверждена. Введи новый пароль, затем продолжай обучение.</p></div><form data-form="new-password" class="plan-card"><label>Новый пароль<input name="password" type="password" autocomplete="new-password" minlength="8" required placeholder="Не менее 8 символов"></label><button class="button button-primary" type="submit">Сохранить пароль</button></form></main>`;
+    <p class="form-note">${signup ? 'Аккаунт откроется сразу. Сохрани пароль: без писем восстановить забытый пароль нельзя.' : 'Если помнишь пароль, его можно поменять в личном плане после входа.'}</p></div>`;
 }
 
 function renderOnboarding(settings = false) {
   const chosen = state.profile?.study_days ?? [1, 2, 3, 4, 5];
   const minutes = state.profile?.minutes_per_day ?? 20;
   return `<main class="container onboarding"><div class="onboarding-intro"><span class="eyebrow">${settings ? 'Личный план' : 'Шаг 1 из 1'}</span><h1>${settings ? 'Настрой свой ритм' : 'Сколько времени ты готов уделять английскому?'}</h1><p>Выбери дни и минуты. План можно менять в любой момент. Прогресс привязан к аккаунту и доступен с другого устройства.</p></div>
-  <form data-form="profile" class="plan-card"><label>Как тебя называть?<input name="display_name" maxlength="40" required value="${esc(state.profile?.display_name || '')}" placeholder="Твоё имя"></label><fieldset><legend>В какие дни заниматься?</legend><div class="day-picker">${[1,2,3,4,5,6,0].map(day => `<label class="day-choice"><input type="checkbox" name="day" value="${day}" ${chosen.includes(day) ? 'checked' : ''}><span>${dayNames[day]}</span></label>`).join('')}</div></fieldset><label>Сколько минут в выбранный день?<div class="minutes-field"><input name="minutes" type="number" min="5" max="240" step="5" value="${minutes}" required><span>минут</span></div></label><p class="muted">Даже 10–20 минут регулярно полезнее длинного занятия раз в месяц.</p><button class="button button-primary" type="submit">${settings ? 'Сохранить план' : 'Начать обучение'} <span aria-hidden="true">↗</span></button></form></main>`;
+  <form data-form="profile" class="plan-card"><label>Как тебя называть?<input name="display_name" maxlength="40" required value="${esc(state.profile?.display_name || '')}" placeholder="Твоё имя"></label><fieldset><legend>В какие дни заниматься?</legend><div class="day-picker">${[1,2,3,4,5,6,0].map(day => `<label class="day-choice"><input type="checkbox" name="day" value="${day}" ${chosen.includes(day) ? 'checked' : ''}><span>${dayNames[day]}</span></label>`).join('')}</div></fieldset><label>Сколько минут в выбранный день?<div class="minutes-field"><input name="minutes" type="number" min="5" max="240" step="5" value="${minutes}" required><span>минут</span></div></label><p class="muted">Даже 10–20 минут регулярно полезнее длинного занятия раз в месяц.</p><button class="button button-primary" type="submit">${settings ? 'Сохранить план' : 'Начать обучение'} <span aria-hidden="true">↗</span></button></form>${settings ? `<form data-form="password" class="plan-card"><h2>Сменить пароль</h2><p class="muted">Письма не отправляются. Чтобы сменить пароль, сначала введи текущий.</p><label>Текущий пароль<input name="current_password" type="password" autocomplete="current-password" required></label><label>Новый пароль<input name="new_password" type="password" autocomplete="new-password" minlength="8" required></label><label>Повтори новый пароль<input name="confirm_password" type="password" autocomplete="new-password" minlength="8" required></label><button class="button button-primary" type="submit">Сменить пароль</button></form>` : ''}</main>`;
 }
 
 function renderWeek() {
@@ -176,7 +171,6 @@ function render() {
   let content;
   if (state.loading) content = `<main class="container loading"><span class="loader"></span><p>Загружаем твой курс…</p></main>`;
   else if (!state.user) content = renderLanding();
-  else if (state.recovery) content = renderNewPassword();
   else if (!state.profile) content = renderOnboarding();
   else {
     const [section, id] = route();
@@ -257,21 +251,12 @@ document.addEventListener('submit', async event => {
       const email = form.elements.email.value.trim();
       const password = form.elements.password.value;
       const response = state.authMode === 'signup'
-        ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}${location.pathname}` } })
+        ? await supabase.auth.signUp({ email, password })
         : await supabase.auth.signInWithPassword({ email, password });
       if (response.error) throw response.error;
-      if (state.authMode === 'signup' && !response.data.session) setNotice('Проверь почту и подтверди адрес. После этого вернись на сайт и войди.');
-      else if (response.data.user) await syncAuth(response.data.user);
-    } else if (type === 'reset-request') {
-      const { error } = await supabase.auth.resetPasswordForEmail(form.elements.email.value.trim(), { redirectTo: `${location.origin}${location.pathname}` });
-      if (error) throw error;
-      setNotice('Если такой аккаунт есть, письмо со ссылкой для сброса пароля отправлено.');
-    } else if (type === 'new-password') {
-      const { error } = await supabase.auth.updateUser({ password: form.elements.password.value });
-      if (error) throw error;
-      state.recovery = false;
-      location.hash = '#/';
-      setNotice('Пароль обновлён. Можно продолжать обучение.');
+      if (!response.data.session || !response.data.user) throw new Error('Вход не выполнен. Проверь настройки регистрации и попробуй снова.');
+      await syncAuth(response.data.user);
+      if (state.authMode === 'signup') setNotice('Аккаунт создан. Выбери свой график занятий.');
     } else if (type === 'profile') {
       const study_days = [...form.querySelectorAll('input[name="day"]:checked')].map(input => Number(input.value));
       if (!study_days.length) throw new Error('Выбери хотя бы один день для занятий.');
@@ -279,6 +264,16 @@ document.addEventListener('submit', async event => {
       const { error } = await supabase.from('english_profiles').upsert(payload, { onConflict: 'user_id' });
       if (error) throw error;
       await loadData(); location.hash = '#/'; setNotice('Личный план сохранён.');
+    } else if (type === 'password') {
+      const currentPassword = form.elements.current_password.value;
+      const newPassword = form.elements.new_password.value;
+      if (newPassword !== form.elements.confirm_password.value) throw new Error('Новые пароли не совпадают.');
+      if (currentPassword === newPassword) throw new Error('Новый пароль должен отличаться от текущего.');
+      const verified = await supabase.auth.signInWithPassword({ email: state.user.email, password: currentPassword });
+      if (verified.error) throw new Error('Текущий пароль неверен.');
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setNotice('Пароль изменён. Используй новый пароль при следующем входе.');
     } else if (type === 'lesson') await saveLesson(form, form.dataset.id);
     else if (type === 'review') await saveReview(form, form.dataset.id);
     else if (type === 'game') await saveGame(form, form.dataset.id);
@@ -291,8 +286,8 @@ document.addEventListener('click', async event => {
   if (!button) return;
   const action = button.dataset.action;
   if (action === 'dismiss') { state.notice = ''; render(); }
-  if (action === 'auth-signup' || action === 'auth-login' || action === 'auth-reset') { state.authMode = action === 'auth-signup' ? 'signup' : action === 'auth-reset' ? 'reset' : 'login'; render(); }
-  if (action === 'signout') { const { error } = await supabase.auth.signOut(); if (error) setNotice(error.message); else { location.hash = '#/'; await syncAuth(null); } }
+  if (action === 'auth-signup' || action === 'auth-login') { state.authMode = action === 'auth-signup' ? 'signup' : 'login'; render(); }
+  if (action === 'signout') { const { error } = await supabase.auth.signOut(); if (error) setNotice(error.message); else { state.notice = ''; location.hash = '#/'; await syncAuth(null); } }
   if (action === 'listen') {
     const lesson = findLesson(button.dataset.id);
     if (!('speechSynthesis' in window)) return setNotice('В этом браузере нет озвучивания. Прочитай диалог вслух.');
@@ -309,7 +304,6 @@ window.addEventListener('hashchange', () => {
   else window.scrollTo({ top: 0, behavior: 'instant' });
 });
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'PASSWORD_RECOVERY') state.recovery = true;
   setTimeout(() => syncAuth(session?.user), 0);
 });
 supabase.auth.getSession().then(({ data, error }) => {
