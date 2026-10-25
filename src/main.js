@@ -1,7 +1,7 @@
 import './styles.css';
 import { supabase } from './supabase.js';
 import { levels, allLessons, findLesson, findLevel } from './course/index.js';
-import { scoreAnswers, progressPercent, nextReview, dueReviews, nextStudyDate, latestPosition, levelProgress, formatMinutes } from './learning.js';
+import { scoreAnswers, progressPercent, nextReview, dueReviews, nextStudyDate, latestPosition, levelProgress, formatMinutes, weeklyPerformance, learningStatus, recommendedTopics } from './learning.js';
 
 const app = document.querySelector('#app');
 const dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
@@ -108,7 +108,20 @@ function renderDashboard() {
   <section class="dashboard-hero"><div><span class="eyebrow light">Следующий урок · ${esc(current.level?.badge ?? '')}</span><h2>${esc(current.lesson?.title ?? 'Курс пройден')}</h2><p>${esc(current.lesson?.goal ?? 'Возвращайся к повторению, чтобы удержать знания.')}</p><a class="button button-cream" href="${path('lesson', current.lesson?.id)}">${done.has(current.lesson?.id) ? 'Повторить урок' : 'Продолжить обучение'} <span aria-hidden="true">↗</span></a></div><div class="dashboard-hero-art" aria-hidden="true"><span>Aa</span><i></i></div></section>
   <section class="stats-grid" aria-label="Прогресс"><div class="stat"><span>Пройдено уроков</span><strong>${done.size}<small> / ${allLessons.length}</small></strong><div class="mini-bar"><i style="width:${progressPercent(done.size, allLessons.length)}%"></i></div></div><div class="stat"><span>Повторить сегодня</span><strong>${due.length}</strong><a href="#/review">К заданиям →</a></div><div class="stat"><span>Время занятий</span><strong>${formatMinutes(totalMinutes)}</strong><small>по завершённым заданиям</small></div><div class="stat"><span>Самооценка понимания</span><strong>${confidence}<small> / 5</small></strong><small>отдельно от баллов за тесты</small></div></section>
   <div class="dashboard-columns"><section class="panel"><div class="panel-head"><div><span class="eyebrow">Твой график</span><h2>Эта неделя</h2></div><span class="panel-meta">${state.profile.minutes_per_day} мин × ${state.profile.study_days.length} дн.</span></div>${renderWeek()}<p class="muted">Следующий плановый день: ${nextDay ? formatDate(nextDay) : 'выбери дни занятий'}.</p></section><section class="panel review-panel"><span class="eyebrow">Закрепление</span><h2>${due.length ? `${due.length} ${due.length === 1 ? 'урок ждёт' : 'уроков ждут'} повторения` : 'Повторений на сегодня нет'}</h2><p>${due.length ? 'Короткий тест вернёт важные слова и правила в память.' : 'Новые задания появятся по графику после пройденных уроков.'}</p><a class="button button-outline" href="#/review">Открыть повторение</a></section></div>
-  <section class="section-block"><div class="section-head inline"><div><span class="eyebrow">Твой маршрут</span><h2>Все уровни</h2></div><a href="#/levels">Вся программа →</a></div>${renderLevelCards()}</section></main>`;
+  <section class="section-block"><div class="section-head inline"><div><span class="eyebrow">Твой маршрут</span><h2>Все уровни</h2></div><a href="#/levels">Вся программа →</a></div>${renderLevelCards()}</section>${renderLearningInsights()}</main>`;
+}
+
+function renderLearningInsights() {
+  const weeks = weeklyPerformance(state.events);
+  const status = learningStatus(state.events);
+  const topics = recommendedTopics(state.progress, state.reviews, state.events).filter(item => findLesson(item.lessonId)).slice(0, 4);
+  const chart = weeks.map(week => {
+    const label = week.start.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    const score = week.averageScore;
+    const description = `Неделя с ${label}: ${score === null ? 'заданий пока нет' : `средний результат ${score}% за ${week.attempts} заданий`}, ${formatMinutes(week.minutes)}`;
+    return `<li class="chart-week" aria-label="${esc(description)}"><span class="chart-value">${score === null ? '—' : `${score}%`}</span><span class="chart-track"><span class="chart-fill ${score !== null && score < 60 ? 'low' : ''}" style="height:${score ?? 0}%"></span></span><span class="chart-label">${esc(label)}</span><small>${week.attempts ? `${week.attempts} зад.` : 'нет данных'}</small></li>`;
+  }).join('');
+  return `<section class="section-block learning-insights" aria-labelledby="insights-title"><div class="section-head"><span class="eyebrow">Картина обучения</span><h2 id="insights-title">Как идёт учёба</h2><p>График считает средний балл заданий за каждую неделю. Он помогает заметить динамику, но не заменяет оценку речи и письма.</p></div><div class="insights-grid"><div class="panel trend-panel"><div class="trend-heading"><div><h3>Результаты за 6 недель</h3><p class="muted">Тесты уроков, игры и повторения</p></div><span class="insight-status ${status.tone}">${esc(status.label)}</span></div><div class="trend-summary"><strong>${status.score === null ? '—' : `${status.score}%`}</strong><span>${esc(status.detail)}</span></div><ol class="performance-chart" aria-label="Средний результат по неделям">${chart}</ol></div><div class="panel focus-panel"><span class="eyebrow">Следующий полезный шаг</span><h3>Что стоит доучить</h3>${topics.length ? `<ul class="topic-list">${topics.map(item => { const lesson = findLesson(item.lessonId); return `<li><a href="${path(item.action, item.lessonId)}"><span><strong>${esc(lesson.title)}</strong><small>${esc(item.reason)}</small></span><b>Открыть ↗</b></a></li>`; }).join('')}</ul>` : `<div class="focus-empty"><span aria-hidden="true">✦</span><p>${state.progress.length ? 'Слабых тем пока не видно. Продолжай уроки и проверяй раздел повторения.' : 'Начни первый урок. После тестов здесь появятся темы, которым нужно больше внимания.'}</p><a href="${path('lesson', allLessons[0].id)}">К первому уроку →</a></div>`}</div></div></section>`;
 }
 
 function renderLevelCards() {
@@ -139,7 +152,7 @@ function renderLesson(lesson) {
   const position = level.lessons.findIndex(item => item.id === lesson.id) + 1;
   const result = state.result?.type === 'lesson' && state.result.id === lesson.id ? state.result : null;
   return `<main class="container lesson-page"><a class="back-link" href="${path('level', level.id)}">← ${esc(level.name)}</a><div class="lesson-layout"><article class="lesson-content"><div class="lesson-head"><span class="eyebrow">${esc(level.badge)} · урок ${position} из ${level.lessons.length}</span><h1>${esc(lesson.title)}</h1><p>${esc(lesson.goal)}</p></div>
-  <section class="lesson-section"><span class="section-index">01 / Разберись</span><h2>Главная идея</h2><p>${esc(lesson.theory)}</p><div class="examples">${lesson.examples.map(example => `<div><span>Пример</span><strong>${esc(example)}</strong></div>`).join('')}</div></section>
+  <section class="lesson-section theory-section"><span class="section-index">01 / Попробуй и разберись</span><h2>Главная идея</h2><div class="theory-context"><span>Где пригодится</span><p>${esc(lesson.goal)}</p></div><div class="theory-challenge"><span class="challenge-kicker">Сначала попробуй сам</span><h3>${esc(lesson.check.prompt)}</h3><div class="challenge-options">${lesson.check.options.map(option => `<button type="button" data-action="theory-answer" data-id="${lesson.id}" data-choice="${esc(option)}">${esc(option)}</button>`).join('')}</div><p class="challenge-feedback" role="status" aria-live="polite">Выбери вариант и сразу увидишь подсказку.</p></div><p>${esc(lesson.theory)}</p><div class="examples">${lesson.examples.map(example => `<div><span>Пример</span><strong>${esc(example)}</strong></div>`).join('')}</div></section>
   <section class="lesson-section"><span class="section-index">02 / Запомни</span><h2>Слова в контексте</h2><div class="word-grid">${lesson.words.map(([en, ru]) => `<div class="word-card"><strong>${esc(en)}</strong><span>${esc(ru)}</span></div>`).join('')}</div></section>
   <section class="lesson-section"><span class="section-index">03 / Слушай и читай</span><div class="section-title-line"><h2>Короткий диалог</h2><button class="button button-outline small" type="button" data-action="listen" data-id="${lesson.id}">▶ Прослушать</button></div><div class="dialogue">${lesson.dialogue.map(line => `<p>${esc(line)}</p>`).join('')}</div><p class="muted">Озвучивание использует голос браузера. Повтори реплики вслух.</p><div class="reading"><strong>Текст для чтения</strong><p>${esc(lesson.reading.text)}</p></div></section>
   <section class="lesson-section"><span class="section-index">04 / Используй</span><h2>Своя речь</h2><div class="task-grid"><div><span>✎ Письмо</span><p>${esc(lesson.writing)}</p></div><div><span>◉ Говорение</span><p>${esc(lesson.speaking)}</p></div></div><p class="muted">Напиши ответ в тетради или заметках и произнеси вслух. Сравни свою работу с правилом и примерами выше.</p></section>
@@ -269,9 +282,7 @@ document.addEventListener('submit', async event => {
       const newPassword = form.elements.new_password.value;
       if (newPassword !== form.elements.confirm_password.value) throw new Error('Новые пароли не совпадают.');
       if (currentPassword === newPassword) throw new Error('Новый пароль должен отличаться от текущего.');
-      const verified = await supabase.auth.signInWithPassword({ email: state.user.email, password: currentPassword });
-      if (verified.error) throw new Error('Текущий пароль неверен.');
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabase.auth.updateUser({ password: newPassword, current_password: currentPassword });
       if (error) throw error;
       setNotice('Пароль изменён. Используй новый пароль при следующем входе.');
     } else if (type === 'lesson') await saveLesson(form, form.dataset.id);
@@ -288,6 +299,20 @@ document.addEventListener('click', async event => {
   if (action === 'dismiss') { state.notice = ''; render(); }
   if (action === 'auth-signup' || action === 'auth-login') { state.authMode = action === 'auth-signup' ? 'signup' : 'login'; render(); }
   if (action === 'signout') { const { error } = await supabase.auth.signOut(); if (error) setNotice(error.message); else { state.notice = ''; location.hash = '#/'; await syncAuth(null); } }
+  if (action === 'theory-answer') {
+    const lesson = findLesson(button.dataset.id);
+    const challenge = button.closest('.theory-challenge');
+    if (!lesson || !challenge) return;
+    const correct = button.dataset.choice === lesson.check.answer;
+    challenge.querySelectorAll('button').forEach(option => {
+      option.disabled = true;
+      option.classList.toggle('correct', option.dataset.choice === lesson.check.answer);
+      option.classList.toggle('incorrect', option === button && !correct);
+    });
+    const feedback = challenge.querySelector('.challenge-feedback');
+    feedback.textContent = correct ? 'Верно! Теперь посмотри, почему это работает, в объяснении ниже.' : `Почти! Подходит «${lesson.check.answer}». Прочитай правило ниже и сравни примеры.`;
+    feedback.classList.toggle('is-correct', correct);
+  }
   if (action === 'listen') {
     const lesson = findLesson(button.dataset.id);
     if (!('speechSynthesis' in window)) return setNotice('В этом браузере нет озвучивания. Прочитай диалог вслух.');
