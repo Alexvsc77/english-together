@@ -35,10 +35,11 @@ Supabase по умолчанию отправляет письма только 
 
 ## GitHub Pages
 
-1. Создай публичный репозиторий `english-together` и отправь в него файлы этой папки. Папки `node_modules` и `dist` исключены через `.gitignore`.
-2. В **Settings → Pages → Build and deployment** выбери **GitHub Actions**. Файл `.github/workflows/deploy.yml` проверит тесты, соберёт сайт и опубликует `dist` при push в `main`.
-3. В Supabase открой **Authentication → URL Configuration**. В `Site URL` укажи итоговый адрес `https://<пользователь>.github.io/english-together/`. В `Redirect URLs` добавь этот же адрес и локальный `http://127.0.0.1:5173/` на время разработки.
-4. После настройки SMTP зарегистрируй два отдельных аккаунта и проверь, что у каждого свой план и прогресс.
+1. Код уже находится в приватном репозитории [Alexvsc77/english-together](https://github.com/Alexvsc77/english-together). Папки `node_modules` и `dist` исключены через `.gitignore`.
+2. Перед публичным запуском настрой отправку писем для открытой регистрации и проверь весь путь регистрации и восстановления пароля. Затем сделай репозиторий публичным: на бесплатном плане GitHub Pages требует публичный репозиторий.
+3. В **Settings → Pages → Build and deployment** выбери **GitHub Actions**. Файл `.github/workflows/deploy.yml` проверит тесты, соберёт сайт и опубликует `dist` при push в `main`.
+4. В Supabase открой **Authentication → URL Configuration**. В `Site URL` укажи `https://alexvsc77.github.io/english-together/`. В `Redirect URLs` добавь этот же адрес и локальный `http://127.0.0.1:5173/` на время разработки.
+5. После настройки SMTP зарегистрируй два отдельных аккаунта и проверь, что у каждого свой план и прогресс.
 
 GitHub Pages размещает статические HTML/CSS/JS-файлы. Данные и регистрация работают через Supabase. [Официальная инструкция GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
 
